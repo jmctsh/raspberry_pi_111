@@ -145,6 +145,55 @@ build/
   git reset --hard origin/main
   ```
 
+### 拉取更新后重新编译与运行（C++ 项目）
+
+根据改动内容选择对应流程：
+
+- 情况 A：仅源码改动（例如 src/main.cpp），已有 build 目录。
+  - 命令：
+    ```bash
+    cd ~/raspberry_pi_111/build
+    make -j
+    ./cyber_muyu 17    # 必要时：sudo ./cyber_muyu 17
+    ```
+  - 说明：make 会增量编译，仅重新生成有改动的目标，速度更快。
+
+- 情况 B：首次在该机器/目录构建，或 CMakeLists.txt 有改动（新增库/源文件、修改编译选项等）。
+  - 命令：
+    ```bash
+    cd ~/raspberry_pi_111
+    mkdir -p build && cd build
+    cmake ..
+    make -j
+    ./cyber_muyu 17    # 必要时：sudo ./cyber_muyu 17
+    ```
+
+- 情况 C：构建异常或希望“干净重编”（清除旧中间文件与缓存）。
+  - 命令：
+    ```bash
+    cd ~/raspberry_pi_111
+    rm -rf build && mkdir build && cd build
+    cmake ..
+    make -j
+    ./cyber_muyu 17    # 必要时：sudo ./cyber_muyu 17
+    ```
+  - 说明：rm -rf build 会递归删除构建目录，请确认路径无误，避免误删其他内容。
+
+- 统一工作流（不需频繁切换目录）：
+  - 首次或配置变化：
+    ```bash
+    cd ~/raspberry_pi_111
+    cmake -S . -B build
+    ```
+  - 编译：
+    ```bash
+    cmake --build build -j
+    ```
+  - 运行：
+    ```bash
+    ./build/cyber_muyu 17    # 必要时：sudo ./build/cyber_muyu 17
+    ```
+
 ### 常用检查命令
 - 查看当前远程：
   ```bash

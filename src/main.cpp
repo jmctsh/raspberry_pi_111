@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <locale.h>
 
 // 简单的赛博木鱼 ASCII 图案
 static const std::vector<std::string> MUYU_ART = {
@@ -73,6 +74,8 @@ int main(int argc, char** argv) {
         if (gpio < 0) gpio = 17;
     }
 
+    // 初始化本地化（启用 UTF-8 多字节处理）
+    setlocale(LC_ALL, "");
     // 初始化 ncurses
     initscr();
     cbreak();
