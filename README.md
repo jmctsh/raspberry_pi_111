@@ -162,4 +162,40 @@ build/
 > 提醒：如果拉取或推送提示认证问题，使用你的 GitHub 账号与个人访问令牌（PAT）完成登录即可。
 
 
-祝你功德无量！
+## GPIO 常见检查与诊断命令
+
+说明：以下命令用于确认某个 BCM 引脚是否空闲、监听按钮事件、查看模式与上下拉。
+
+前置安装（如未安装）：
+- sudo apt install -y gpiod
+- sudo apt install -y raspi-gpio
+
+快速映射与占用检查：
+- 映射 BCM → 芯片与线号（以 BCM17 为例）：
+  - gpiofind GPIO17
+  - 典型输出：gpiochip0 17（表示在 gpiochip0 上的第 17 号线）
+- 查看整芯片信息并定位第 17 号线：
+  - gpioinfo gpiochip0
+  - 只看第 17 号线（可选）：
+    - gpioinfo gpiochip0 | sed -n 's/^\s*line\s\+17.*/&/p'
+- 判断规则：
+  - consumer 字段为空或显示 unused → 该线空闲，可直接使用
+  - consumer 显示 gpio-keys 等非空名称 → 被内核/驱动占用，建议改用其它 GPIO（如 23/24/25），或改用 /dev/input（evdev）方案读取按钮
+
+监听按钮事件（边沿触发）：
+- gpiomon gpiochip0 17
+- 操作：按下/松开按钮后应看到时间戳与边沿（rising/falling）。若报 Resource busy 或 Operation not permitted，说明被占用或权限不足；可尝试 sudo 运行或更换 GPIO。
+
+读取当前电平（0/1）：
+- gpioget gpiochip0 17
+
+查看 BCM 模式与上下拉：
+- raspi-gpio get 17
+- 输出包含 func=INPUT/OUTPUT、pull=UP/DOWN/OFF 等，便于确认是否为输入与拉高/拉低。
+
+查看头针脚整体布局信息：
+- pinout
+
+与程序配合运行：
+- ./cyber_muyu 17
+- 若权限不足：sudo ./cyber_muyu 17
