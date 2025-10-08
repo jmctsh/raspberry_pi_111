@@ -1,5 +1,5 @@
 #include <gpiod.h>
-#include <ncurses.h>
+#include <ncursesw/curses.h>
 #include <vector>
 #include <string>
 #include <chrono>
@@ -8,41 +8,45 @@
 #include <cstdlib>
 #include <ctime>
 #include <locale.h>
+#include <wchar.h>
 
-// 简单的赛博木鱼 ASCII 图案
-static const std::vector<std::string> MUYU_ART = {
-    "      ____________      ",
-    "   __/            \\__   ",
-    "  /   赛博木鱼         \\  ",
-    " |    ()        ()     | ",
-    " |        _______      | ",
-    "  \\_____/       \\_____/  ",
+// 简单的赛博木鱼 ASCII 图案（含中文），使用宽字符以正确显示 UTF-8）
+static const std::vector<std::wstring> MUYU_ART = {
+    L"      ____________      ",
+    L"   __/            \\__   ",
+    L"  /   赛博木鱼         \\  ",
+    L" |    ()        ()     | ",
+    L" |        _______      | ",
+    L"  \\_____/       \\_____/  ",
 };
 
 static void drawCenteredArt(int start_y, int cols) {
     for (size_t i = 0; i < MUYU_ART.size(); ++i) {
-        int x = (cols - (int)MUYU_ART[i].size()) / 2;
-        mvprintw(start_y + (int)i, x < 0 ? 0 : x, "%s", MUYU_ART[i].c_str());
+        int width = wcswidth(MUYU_ART[i].c_str(), (int)MUYU_ART[i].size());
+        int x = (cols - width) / 2;
+        mvaddwstr(start_y + (int)i, x < 0 ? 0 : x, MUYU_ART[i].c_str());
     }
 }
 
 static void showMeritPlusOne(int art_y, int cols) {
-    const char* msg = "功德+1";
-    int x = cols / 2 - (int)std::string(msg).size() / 2;
+    const wchar_t* msg = L"功德+1";
+    int width = wcswidth(msg, (int)wcslen(msg));
+    int x = cols / 2 - width / 2;
     attron(COLOR_PAIR(3) | A_BOLD);
-    mvprintw(art_y - 2, x < 0 ? 0 : x, "%s", msg);
+    mvaddwstr(art_y - 2, x < 0 ? 0 : x, msg);
     attroff(COLOR_PAIR(3) | A_BOLD);
     refresh();
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
     // 擦除动画文本
-    mvprintw(art_y - 2, x < 0 ? 0 : x, "%*s", (int)std::string(msg).size(), "");
+    mvhline(art_y - 2, x < 0 ? 0 : x, ' ', width);
 }
 
 static void drawCount(int y, int cols, int count) {
-    std::string s = "累计功德: " + std::to_string(count);
-    int x = cols / 2 - (int)s.size() / 2;
+    std::wstring s = L"累计功德: " + std::to_wstring(count);
+    int width = wcswidth(s.c_str(), (int)s.size());
+    int x = cols / 2 - width / 2;
     attron(COLOR_PAIR(2) | A_BOLD);
-    mvprintw(y, x < 0 ? 0 : x, "%s", s.c_str());
+    mvaddwstr(y, x < 0 ? 0 : x, s.c_str());
     attroff(COLOR_PAIR(2) | A_BOLD);
 }
 
@@ -106,10 +110,11 @@ int main(int argc, char** argv) {
 
     int count = 0;
     drawCount(art_y + (int)MUYU_ART.size() + 2, cols, count);
-    mvprintw(1, 2, "GPIO: %d  按下按钮或按空格/回车增加功德；按 q 退出", gpio);
+    std::wstring header = L"GPIO: " + std::to_wstring(gpio) + L"  按下按钮或按空格/回车增加功德；按 q 退出";
+    mvaddwstr(1, 2, header.c_str());
     if (!line) {
         attron(A_BOLD);
-        mvprintw(2, 2, "警告: 未能打开 GPIO 线路或事件申请失败，键盘可用于模拟触发。");
+        mvaddwstr(2, 2, L"警告: 未能打开 GPIO 线路或事件申请失败，键盘可用于模拟触发。");
         attroff(A_BOLD);
     }
     refresh();
